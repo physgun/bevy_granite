@@ -1,0 +1,6 @@
+[book]
+authors = ["physgun"]
+language = "en"
+multilingual = false
+src = "src"
+title = "Design"
