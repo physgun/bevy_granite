@@ -1,14 +1,12 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+//! crate level doc for bevy_granite
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+use bevy::prelude::*;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
+mod network;
+
+pub struct GranitePlugin;
+impl Plugin for GranitePlugin {
+    fn build(&self, app: &mut App) {
+        
     }
 }

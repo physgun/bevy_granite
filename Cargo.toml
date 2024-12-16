@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 bevy = { version = "0.15", features = ["dynamic_linking"] }
 lightyear = "0.17.1"
+leafwing-input-manager = 0.16.0"
 
 [profile.dev]
 opt-level = 1
