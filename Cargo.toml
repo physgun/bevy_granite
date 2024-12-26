@@ -5,8 +5,10 @@ edition = "2021"
 
 [dependencies]
 bevy = { version = "0.15", features = ["dynamic_linking"] }
-lightyear = "0.17.1"
-leafwing-input-manager = 0.16.0"
+serde = { version = "1", features = ["derive"] }
+bevy_replicon = "0.29.1"
+bevy_replicon_renet2 = "0.1.0"
+leafwing-input-manager = "0.16.0"
 
 [profile.dev]
 opt-level = 1

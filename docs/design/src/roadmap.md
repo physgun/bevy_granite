@@ -3,9 +3,10 @@
 ## Basics
 
 ### Networking
-- [ ] Set up a localhost server
-- [ ] Client receives test box from Server
-- [ ] Client sends mouse data to server
+- [ ] Set up a hostserver example
+- [ ] Additional client app receives hostserver's mouse pos
+- [ ] hostserver sees client's mouse pos
+- [ ] Handle multiple windows
 
 ### Basic Tools & Operations
 - [ ] Send a global tool to Server
