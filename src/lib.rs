@@ -2,12 +2,20 @@
 
 use bevy::prelude::*;
 use network::NetworkPlugin;
+use workbench::WorkbenchPlugin;
 
-mod network;
+pub mod network;
+pub mod workbench;
 
 pub struct GranitePlugin;
 impl Plugin for GranitePlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(NetworkPlugin);
+        app
+            .insert_resource(bevy::winit::WinitSettings {
+            focused_mode: bevy::winit::UpdateMode::Continuous,
+            unfocused_mode: bevy::winit::UpdateMode::Continuous,
+            })
+            .add_plugins(NetworkPlugin)
+            .add_plugins(WorkbenchPlugin);
     }
 }

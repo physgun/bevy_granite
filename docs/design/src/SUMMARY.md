@@ -16,6 +16,7 @@
     - [3D Visualization]()
 - [Version Control Center]()
 - [Configuration Hierarchies]()
+- [Window Management]()
 - [Tools]()
     - [Modifiers]()
         - [Why]()

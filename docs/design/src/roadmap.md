@@ -4,9 +4,9 @@
 
 ### Networking
 - [ ] Set up a hostserver example
-- [ ] Additional client app receives hostserver's mouse pos
+- [ ] Additional client (hostserver?) app receives hostserver's mouse pos
 - [ ] hostserver sees client's mouse pos
-- [ ] Handle multiple windows
+- [ ] Handle multiple windows using root ui checks and sync
 
 ### Basic Tools & Operations
 - [ ] Send a global tool to Server

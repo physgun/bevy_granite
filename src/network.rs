@@ -8,7 +8,7 @@ mod channels;
 mod avatar;
 mod messages;
 mod input;
-mod multiwindow;
+mod clientele;
 
 use avatar::AvatarPlugin;
 
