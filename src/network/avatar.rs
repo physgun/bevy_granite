@@ -1,8 +1,10 @@
 //! The network layer of Bevy Components representing the user, which are shared and replicated between hostservers.
 
 use serde::{Serialize, Deserialize};
-use bevy::{ecs::entity::MapEntities, input::mouse::MouseMotion, math::Vec2, prelude::*};
+use bevy::{ecs::entity::MapEntities, input::mouse::MouseMotion, math::Vec2, prelude::*, ui::RelativeCursorPosition};
 use bevy_replicon::{core::ClientId, prelude::{AppRuleExt, Replicated}};
+
+use crate::workbench::structure::GraniteRoot;
 
 pub struct AvatarPlugin;
 impl Plugin for AvatarPlugin {
@@ -15,91 +17,87 @@ impl Plugin for AvatarPlugin {
             .replicate::<LocusKind<StylusLocus>>()
             .replicate::<LocusPosition>()
             .replicate::<LocusColor>()
-            .replicate_mapped::<LocusWindow>()
             .replicate::<LocusDetected>()
-            
-            .add_systems(Startup, Self::init_local_locus_entities)
-            .add_systems(PreUpdate, Self::update_local_mouse_loci)
-            .add_systems(Update, Self::draw_mouse_loci_gizmos);
+
+            .add_observer(Self::add_local_loci_children)
+
+            // TODO: Order before network stuff gets sent out.
+            .add_systems(PreUpdate, (Self::detect_local_mouse_loci).run_if(on_event::<MouseMotion>));
     }
 }
 impl AvatarPlugin {
-    /// Spawn in the locus-tracking, replicated entities on Startup for our listen server-client.
-    fn init_local_locus_entities(mut commands: Commands) {
+    /// Observer for adding local locus child entities to a freshly spawned [`GraniteRoot`] UI root node.
+    fn add_local_loci_children(
+        trigger: Trigger<OnAdd, GraniteRoot>,
+        mut commands: Commands
+    ) {
+        let image_node_color = LocusColor::MATERIAL_LIGHT.tertiary_color();
 
-        // Only one mouse per user is supported. Don't see that changing, ever?
-        commands.spawn((
+        let mouse_locus_entity = commands.spawn((
+            AvatarLocal,
             AvatarProfile::SERVER, 
+            Visibility::Hidden,
+            BackgroundColor(image_node_color),
+            BorderRadius::new(Val::ZERO, Val::Px(2.5), Val::Px(7.5), Val::Px(2.5)),
+            Node {
+                position_type: PositionType::Absolute,
+                height: Val::Px(7.5),
+                width: Val::Px(7.5),
+                ..Default::default()
+            },
+            ImageNode::solid_color(image_node_color),
+            GlobalZIndex(1000000),
             LocusKind{ locus_type: MouseLocus }, 
             LocusPosition::default(),
             LocusColor::MATERIAL_LIGHT,
-            LocusWindow::default(),
             Replicated)
-        );
+        ).id();
+        commands.entity(trigger.entity()).add_child(mouse_locus_entity);
     }
 
-    /// Updates all local mouse "loci" by searching through all `Window`s for a `cursor_position()`. 
-    /// Inserts or removes `LocusDetected` depending on the search results.
-    fn update_local_mouse_loci(
+    /// Updates all local mouse loci by checking if its parent `GraniteRoot`'s `RelativeCursorPosition` detected a mouse.
+    fn detect_local_mouse_loci(
         mut commands: Commands,
-        windows_query: Query<(Entity, &Window)>,
-        mut mouse_locus_query: Query<
-            (Entity, &mut LocusPosition, &mut LocusWindow, Option<&LocusDetected>), 
-            With<LocusKind<MouseLocus>>>,
-        mouse_moved_event_box: EventReader<MouseMotion>
+        root_detection_query: Query<&RelativeCursorPosition, With<GraniteRoot>>,
+        mut local_mouse_locus: Query<
+        (Entity, &Parent ,&mut Node, &mut LocusPosition, &mut Visibility, Option<&LocusDetected>),
+        (With<LocusKind<MouseLocus>>, With<AvatarLocal>)>
     ) {
-        // Don't bother checking or updating if the mouse never moved.
-        if mouse_moved_event_box.is_empty() {return;}
+        for (
+            mouse_locus_entity, 
+            granite_root_parent, 
+            mut mouse_locus_node,
+            mut locus_pos,
+            mut node_visibility,
+            locus_detected) in &mut local_mouse_locus {
 
-        let Ok(
-            (mouse_locus_entity, mut locus_pos, mut locus_window, locus_detected)
-        ) = mouse_locus_query.get_single_mut() else {
-            warn!("Mouse locus entity was not found!");
-            return;
-        };
-
-        for (window_entity, window) in &windows_query {
-
-            let Some(mouse_pos) = window.cursor_position() else {
+            let Ok(parent_relcurpos) = root_detection_query.get(granite_root_parent.get()) else {
+                error!("Mouse locus parent GraniteRoot entity not found with RelativeCursorPosition component!");
                 continue;
             };
 
-            // Convert coordinates from screenspace to relative screenspace.
-            let new_pos = Vec2 { 
-                x: mouse_pos.x / window.size().x, 
-                y: mouse_pos.y / window.size().y 
+            let Some(detected_relative_position) = parent_relcurpos.normalized else {
+                if let Visibility::Inherited = *node_visibility { node_visibility.toggle_inherited_hidden(); } 
+                if locus_detected.is_some() { commands.entity(mouse_locus_entity).remove::<LocusDetected>(); }
+                continue;
             };
 
-            println!("Found mouse! Was {:?}, saved as {:?}", mouse_pos, new_pos);
+            // Stick a copy in here, to replicate to others if needed.
+            locus_pos.set_pos(detected_relative_position);
 
-            locus_pos.set_pos(new_pos);
-            locus_window.set_entity(window_entity);
+            mouse_locus_node.left = Val::Percent(detected_relative_position.x * 100.0);
+            mouse_locus_node.top = Val::Percent(detected_relative_position.y * 100.0);
+            if let Visibility::Hidden =  *node_visibility { node_visibility.toggle_inherited_hidden(); }
 
-            if locus_detected.is_none() { 
-                commands.entity(mouse_locus_entity).insert(LocusDetected);  
-            }
-            return;
-        }
-
-        // If we reach this point, no cursor_position() was ever found.
-        if locus_detected.is_some() {
-            commands.entity(mouse_locus_entity).remove::<LocusDetected>();
-        }
-    }
-
-    fn draw_mouse_loci_gizmos(
-        mut gizmos: Gizmos,
-        mouse_loci_query: Query<(&LocusColor, &LocusPosition), With<LocusKind<MouseLocus>>>
-    ) {
-        for (color, pos) in & mouse_loci_query {
-            gizmos.circle_2d(
-                Isometry2d::new(pos.get_pos(), Rot2::IDENTITY), 
-                5.0, 
-                color.primary_color()
-            );
+            // Also needed for replication, as `Visibility` doesn't implement serde traits: 
+            if locus_detected.is_none() { commands.entity(mouse_locus_entity).insert(LocusDetected); }
         }
     }
 }
+
+/// Marker component separating out entities that belong to the local user and are not replicated from a server.
+#[derive(Component, Serialize, Deserialize, Clone, Debug, PartialEq, Reflect)]
+pub struct AvatarLocal;
 
 /// Main component for the entity representation of a user. Attached to everything associated with that user.
 #[derive(Component, Serialize, Deserialize, Clone, Debug, PartialEq, Reflect)]
@@ -108,7 +106,7 @@ pub struct AvatarProfile {
 }
 impl Default for AvatarProfile {
     fn default() -> Self {
-        AvatarProfile { replicon_id: ClientId::new(777) }
+        AvatarProfile { replicon_id: ClientId::new(1) }
     }
 }
 impl AvatarProfile {
@@ -180,12 +178,25 @@ impl LocusColor {
         LocusColor { primary_color, secondary_color, tertiary_color }
     }
 
+    /// Returns the primary color.
     pub fn primary_color(self) -> Color {
         self.primary_color.into()
     }
+
+    /// Returns the secondary color.
+    pub fn secondary_color(self) -> Color {
+        self.secondary_color.into()
+    }
+
+    /// Returns the tertiary color.
+    pub fn tertiary_color(self) -> Color {
+        self.tertiary_color.into()
+    }
 }
 
-/// In relative screenspace coordinates, from top-left `(0.0, 0.0)` to bottom right `(1.0, 1.0)`
+/// In relative screenspace coordinates, from top-left `(0.0, 0.0)` to bottom right `(1.0, 1.0)`  
+/// 
+/// Here for the network replication, too difficult to send over the `ImageNode` positions.
 #[derive(Component, Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Reflect)]
 pub struct LocusPosition {
     pos: Vec2
@@ -238,7 +249,25 @@ impl LocusWindow {
     }
 }
 
-/// Marker component labeling the entity as having been detected, and will show up on rendering queries for that entity.
+/// Stores the GraniteRoot Ui Node Entity that this locus was last spotted on.
+/// Needs to be later refactored to accept `Option<Entity` for mapping over the network.
+#[derive(Component, Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Reflect)]
+pub struct LocusRoot {
+    entity: Entity
+}
+impl Default for LocusRoot {
+    fn default() -> Self {
+        LocusRoot { entity: Entity::PLACEHOLDER }
+    }
+}
+impl MapEntities for LocusRoot {
+    /// We'll need to update this later to accept `Option<Entity>`
+    fn map_entities<M: EntityMapper>(&mut self, entity_mapper: &mut M) {
+        self.entity = entity_mapper.map_entity(self.entity);
+    }
+}
+
+/// Marker component labeling the entity as having been detected, and will show up on rendering queries for that entity.  
 #[derive(Component, Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Reflect)]
 pub struct LocusDetected;
 

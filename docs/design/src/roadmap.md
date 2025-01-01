@@ -3,7 +3,7 @@
 ## Basics
 
 ### Networking
-- [ ] Set up a hostserver example
+- [x] Set up a hostserver example
 - [ ] Additional client (hostserver?) app receives hostserver's mouse pos
 - [ ] hostserver sees client's mouse pos
 - [ ] Handle multiple windows using root ui checks and sync
