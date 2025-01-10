@@ -1,11 +1,12 @@
 //! The network layer of Bevy Components representing the user, which are shared and replicated between hostservers.
 
 use serde::{Serialize, Deserialize};
-use bevy::{ecs::entity::MapEntities, input::mouse::MouseMotion, math::Vec2, prelude::*, ui::RelativeCursorPosition};
+use bevy::{color::palettes::css, input::mouse::MouseMotion, math::Vec2, prelude::*, ui::{RelativeCursorPosition, UiSystem}};
 use bevy_replicon::{core::ClientId, prelude::{AppRuleExt, Replicated}};
 
 use crate::workbench::structure::GraniteRoot;
 
+/// Plugin the user profiles, customizable representation, and so on.
 pub struct AvatarPlugin;
 impl Plugin for AvatarPlugin {
     fn build(&self, app: &mut App) {
@@ -21,8 +22,12 @@ impl Plugin for AvatarPlugin {
 
             .add_observer(Self::add_local_loci_children)
 
-            // TODO: Order before network stuff gets sent out.
-            .add_systems(PreUpdate, (Self::detect_local_mouse_loci).run_if(on_event::<MouseMotion>));
+            // TODO: Order before network stuff gets sent out. Find frame delay cause!!
+            .add_systems(PreUpdate, 
+                (Self::detect_local_mouse_loci)
+                    .after(UiSystem::Focus)
+                    .run_if(on_event::<MouseMotion>)
+            );
     }
 }
 impl AvatarPlugin {
@@ -34,6 +39,7 @@ impl AvatarPlugin {
         let image_node_color = LocusColor::MATERIAL_LIGHT.tertiary_color();
 
         let mouse_locus_entity = commands.spawn((
+            Name::new("Local Avatar Mouse Locus"),
             AvatarLocal,
             AvatarProfile::SERVER, 
             Visibility::Hidden,
@@ -46,7 +52,7 @@ impl AvatarPlugin {
                 ..Default::default()
             },
             ImageNode::solid_color(image_node_color),
-            GlobalZIndex(1000000),
+            GlobalZIndex(1_000_000),
             LocusKind{ locus_type: MouseLocus }, 
             LocusPosition::default(),
             LocusColor::MATERIAL_LIGHT,
@@ -102,6 +108,7 @@ pub struct AvatarLocal;
 /// Main component for the entity representation of a user. Attached to everything associated with that user.
 #[derive(Component, Serialize, Deserialize, Clone, Debug, PartialEq, Reflect)]
 pub struct AvatarProfile {
+    /// The Replicon ID assigned this user.
     replicon_id: ClientId
 }
 impl Default for AvatarProfile {
@@ -110,8 +117,10 @@ impl Default for AvatarProfile {
     }
 }
 impl AvatarProfile {
+    /// Default profile for a host.
     const SERVER: AvatarProfile = AvatarProfile { replicon_id: ClientId::SERVER };
 
+    /// Create a new profile from scratch.
     fn new(rep_id: u64) -> Self {
         AvatarProfile { replicon_id: ClientId::new(rep_id) }
     }
@@ -126,6 +135,7 @@ impl AvatarProfile {
 /// What kind of user representation this locus will convey. Generic for query filtering.
 #[derive(Component, Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Reflect)]
 pub struct LocusKind<K> {
+    /// Type marker for Query filtering.
     locus_type: K
 }
 
@@ -148,49 +158,55 @@ pub struct StylusLocus;
 /// Unique color scheme of the user's locus.
 #[derive(Component, Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Reflect)]
 pub struct LocusColor {
-    primary_color: Srgba,
-    secondary_color: Srgba,
-    tertiary_color: Srgba
+    /// Dominant color of the user.
+    primary: Srgba,
+    /// Accessory color, less prominent than the primary.
+    secondary: Srgba,
+    /// Rare accent color.
+    tertiary: Srgba
 }
 impl Default for LocusColor {
     fn default() -> Self {
         LocusColor { 
-            primary_color: bevy::color::palettes::css::WHITE, 
-            secondary_color: bevy::color::palettes::css::GOLD, 
-            tertiary_color: bevy::color::palettes::css::AQUA 
+            primary: css::WHITE, 
+            secondary: css::GOLD, 
+            tertiary: css::AQUA 
         }
     }
 }
 impl LocusColor {
+    /// Default Light
     const MATERIAL_LIGHT: LocusColor = LocusColor {
-        primary_color: bevy::color::palettes::css::WHITE, 
-        secondary_color: bevy::color::palettes::css::GOLD, 
-        tertiary_color: bevy::color::palettes::css::AQUA 
+        primary: css::WHITE, 
+        secondary: css::GOLD, 
+        tertiary: css::AQUA 
     };
 
+    /// Default Dark
     const MATERIAL_DARK: LocusColor = LocusColor {
-        primary_color: bevy::color::palettes::css::BLACK, 
-        secondary_color: bevy::color::palettes::css::GOLD, 
-        tertiary_color: bevy::color::palettes::css::AQUA 
+        primary: css::BLACK, 
+        secondary: css::GOLD, 
+        tertiary: css::AQUA 
     };
 
+    /// Custom new color.
     pub fn new(primary_color: Srgba, secondary_color: Srgba, tertiary_color: Srgba) -> Self {
-        LocusColor { primary_color, secondary_color, tertiary_color }
+        LocusColor { primary: primary_color, secondary: secondary_color, tertiary: tertiary_color }
     }
 
-    /// Returns the primary color.
+    /// Returns the primary color as the [`Color`] type.
     pub fn primary_color(self) -> Color {
-        self.primary_color.into()
+        self.primary.into()
     }
 
-    /// Returns the secondary color.
+    /// Returns the secondary color as the [`Color`] type.
     pub fn secondary_color(self) -> Color {
-        self.secondary_color.into()
+        self.secondary.into()
     }
 
-    /// Returns the tertiary color.
+    /// Returns the tertiary color as the [`Color`] type.
     pub fn tertiary_color(self) -> Color {
-        self.tertiary_color.into()
+        self.tertiary.into()
     }
 }
 
@@ -199,6 +215,7 @@ impl LocusColor {
 /// Here for the network replication, too difficult to send over the `ImageNode` positions.
 #[derive(Component, Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Reflect)]
 pub struct LocusPosition {
+    /// Cheap xy to send over the network.
     pos: Vec2
 }
 impl Default for LocusPosition {
@@ -216,54 +233,6 @@ impl LocusPosition {
     pub fn set_pos(&mut self, new_pos: Vec2) -> &mut Self {
         self.pos = new_pos;
         self
-    }
-}
-
-/// The `Window` `Entity` the locus was detected in.
-/// TODO: Replace with the Ui Root construct
-#[derive(Component, Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Reflect)]
-pub struct LocusWindow {
-    entity: Entity
-}
-impl Default for LocusWindow {
-    fn default() -> Self {
-        LocusWindow { entity: Entity::PLACEHOLDER }
-    }
-}
-impl MapEntities for LocusWindow {
-    fn map_entities<M: EntityMapper>(&mut self, entity_mapper: &mut M) {
-        self.entity = entity_mapper.map_entity(self.entity);
-    }
-}
-impl LocusWindow {
-    /// Gets the window `Entity`
-    pub fn entity(self) -> Self {
-        self.entity;
-        self
-    }
-
-    /// Sets the window `Entity`
-    pub fn set_entity(&mut self, new_entity: Entity) -> &mut Self {
-        self.entity = new_entity;
-        self
-    }
-}
-
-/// Stores the GraniteRoot Ui Node Entity that this locus was last spotted on.
-/// Needs to be later refactored to accept `Option<Entity` for mapping over the network.
-#[derive(Component, Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Reflect)]
-pub struct LocusRoot {
-    entity: Entity
-}
-impl Default for LocusRoot {
-    fn default() -> Self {
-        LocusRoot { entity: Entity::PLACEHOLDER }
-    }
-}
-impl MapEntities for LocusRoot {
-    /// We'll need to update this later to accept `Option<Entity>`
-    fn map_entities<M: EntityMapper>(&mut self, entity_mapper: &mut M) {
-        self.entity = entity_mapper.map_entity(self.entity);
     }
 }
 

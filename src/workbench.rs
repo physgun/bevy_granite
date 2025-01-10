@@ -6,6 +6,7 @@ pub mod structure;
 
 use structure::StructurePlugin;
 
+/// Explain what a Workbench even is.
 pub struct WorkbenchPlugin;
 impl Plugin for WorkbenchPlugin {
     fn build(&self, app: &mut App) {
