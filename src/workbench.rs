@@ -2,12 +2,12 @@
 
 use bevy::prelude::*;
 
-pub mod structure;
+pub (crate) mod structure;
 
 use structure::StructurePlugin;
 
 /// Explain what a Workbench even is.
-pub struct WorkbenchPlugin;
+pub (crate) struct WorkbenchPlugin;
 impl Plugin for WorkbenchPlugin {
     fn build(&self, app: &mut App) {
         app

@@ -5,7 +5,9 @@
 ### [ ] Basic Networking
 
 #### [ ] Ping Server As Client
-- [x] Connections as entities, decoupled host and client functions.
+- [x] Connections as entities.
+- [ ] Set up default client with host server infrastructure.
+    - Four operations: Start Server, End Server, Connect To Server, Leave Server
 - [ ] Setup basic_network example with test UI.
 - [ ] Track connected servers
 - [ ] Track connected clients
@@ -15,8 +17,8 @@
 - [ ] Send ping message, get pong response
 
 #### [ ] Map GraniteRoot Nodes 
-- [ ] Map client's GraniteRoot nodes
-- [ ] Map server's GraniteRoot nodes
+- [ ] Map client's GraniteRoot nodes & children
+- [ ] Map server's GraniteRoot nodes & children
 - [ ] Handle mismatches
 
 #### [ ] View Everyone's Workbench Mice

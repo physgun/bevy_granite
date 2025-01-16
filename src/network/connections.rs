@@ -1,65 +1,98 @@
 //! Module level docs for handling all connections.
 
+use core::net::{IpAddr, Ipv6Addr};
+
 use serde::{Serialize, Deserialize};
 use bevy::prelude::*;
 
 /// Plugin defining connection entities.
-pub struct ConnectionsPlugin;
+pub (crate) struct ConnectionsPlugin;
 impl Plugin for ConnectionsPlugin {
     fn build(&self, app: &mut App) {
         
     }
 }
 
-/// Generic marker component separating the types of connections.
-#[derive(Component, Serialize, Deserialize, Clone, Copy, Debug, Default, PartialEq, Reflect)]
-pub struct ConnectionKind<K> {
-    /// Type marker for Query filtering.
-    connection_kind: K
+
+// TODO: Honestly, the network libraries handle all of this. Do we really need any of it?
+
+
+
+/// Main component for an entity representing some kind of network connection.
+#[derive(Component, Serialize, Deserialize, Clone, Copy, Debug, PartialEq)]
+pub struct Connection {
+    /// IP Address of the connection.
+    address: IpAddr,
+    /// Port of the connection.
+    port: u16,
+    /// What role the target of this conection plays in the network topology.
+    topology: ConnectionTopology,
+    /// The... connection status. Not much more to say about it.
+    status: ConnectionStatus,
+    /// Describes if the connection is sharing the material project or sharing both the material and workbench UI.
+    level: ConnectionLevel
+}
+impl Default for Connection {
+    fn default() -> Self {
+        Connection { 
+            address: IpAddr::V6(Ipv6Addr::UNSPECIFIED), 
+            port: 7142, 
+            topology: ConnectionTopology::CentralServer, 
+            status: ConnectionStatus::Initialized, 
+            level: ConnectionLevel::Material 
+        }
+    }
+}
+impl Connection {
+    /// Spawns a new [`Connection`] with custom parameters.
+    pub fn new(address: IpAddr, port: u16, topology: ConnectionTopology, status: ConnectionStatus, level: ConnectionLevel) -> Self {
+        Connection { 
+            address, 
+            port, 
+            topology, 
+            status, 
+            level
+        }
+    }
 }
 
-/// Represents a connection to a client.
+/// What role the target of this conection plays in the network topology.
 #[derive(Component, Serialize, Deserialize, Clone, Copy, Debug, Default, PartialEq, Reflect)]
-pub struct ClientConnection;
-
-/// Represents a connection to a server. At the moment, a Granite app can only have one of these at a time, and not if you're the host!
-#[derive(Component, Serialize, Deserialize, Clone, Copy, Debug, Default, PartialEq, Reflect)]
-pub struct ServerConnection;
-
-/// Generic marker component separating connections by connection status.
-#[derive(Component, Serialize, Deserialize, Clone, Copy, Debug, Default, PartialEq, Reflect)]
-pub struct ConnectionStatus<S>{
-    /// Type marker for Query filtering.
-    connection_status: S
+pub enum ConnectionTopology {
+    /// Represents a connection to a client, who we are sending simulation info to.
+    #[default]
+    ClientLeaf,
+    /// Represents a connection to a central server, who has authority over the entire network.
+    CentralServer,
+    /// Represents a connection to a relay server, who interfaces with foreign data types.
+    RelayServer,
+    /// Represents a connection to a resource server, who is delegated simulation work.
+    ResourceServer
 }
 
-/// This connection hasn't sent a keep-alive in a little while.
+/// The... connection status. Not much more to say about it.
 #[derive(Component, Serialize, Deserialize, Clone, Copy, Debug, Default, PartialEq, Reflect)]
-pub struct LostConnection;
-
-/// This connection has been deliberately closed.
-#[derive(Component, Serialize, Deserialize, Clone, Copy, Debug, Default, PartialEq, Reflect)]
-pub struct Disconnected;
-
-/// This connection is in the process of establishing itself.
-#[derive(Component, Serialize, Deserialize, Clone, Copy, Debug, Default, PartialEq, Reflect)]
-pub struct Connecting;
-
-/// This connection has been established.
-#[derive(Component, Serialize, Deserialize, Clone, Copy, Debug, Default, PartialEq, Reflect)]
-pub struct Connected;
-
-/// Generic marker component separating connections by level, Workbench or Material.
-#[derive(Component, Serialize, Deserialize, Clone, Copy, Debug, Default, PartialEq, Reflect)]
-pub struct ConnectionLevel<L>{
-    /// Type marker for Query filtering.
-    connection_level: L
+pub enum ConnectionStatus {
+    /// This connection has just been created, and needs configured.
+    #[default]
+    Initialized,
+    /// This connection hasn't sent a keep-alive in a little while.
+    LostConnection,
+    /// This connection has been deliberately closed in some way.
+    Disconnected,
+    /// This connection is in the process of establishing itself.
+    Connecting,
+    /// This connection has been established.
+    Connected
 }
 
-/// This connection is at the Workbench level.
+/// Describes if the connection is sharing the material project or sharing both the material and workbench UI.
 #[derive(Component, Serialize, Deserialize, Clone, Copy, Debug, Default, PartialEq, Reflect)]
-pub struct WorkbenchConnection;
-
-/// This connection is at the Material level
-#[derive(Component, Serialize, Deserialize, Clone, Copy, Debug, Default, PartialEq, Reflect)]
-pub struct MaterialConnection;
+pub enum ConnectionLevel {
+    /// Sharing data on the project itself, using one's own workbench UI config.
+    #[default]
+    Material,
+    /// Sharing data on both the project and the authority's workbench UI too.
+    /// Allows one to interact directly with the UI of the central server.
+    Workbench
+}

@@ -2,25 +2,30 @@
 
 use serde::{Serialize, Deserialize};
 use bevy::{color::palettes::css, input::mouse::MouseMotion, math::Vec2, prelude::*, ui::{RelativeCursorPosition, UiSystem}};
-use bevy_replicon::{core::ClientId, prelude::{AppRuleExt, Replicated}};
+use lightyear::prelude::{client::ComponentSyncMode, AppComponentExt, ChannelDirection, ClientId, Linear, Replicated};
 
-use crate::workbench::structure::GraniteRoot;
+use lightyear::prelude::client::Replicate as ClientReplicate;
+
+use crate::workbench::structure::{LocalLociStratumSpawned, LociStratum};
 
 /// Plugin the user profiles, customizable representation, and so on.
-pub struct AvatarPlugin;
+pub (crate) struct AvatarPlugin;
 impl Plugin for AvatarPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .replicate::<AvatarProfile>()
-            .replicate::<LocusKind<MouseLocus>>()
-            .replicate::<LocusKind<FocusLocus>>()
-            .replicate::<LocusKind<TouchprintLocus>>()
-            .replicate::<LocusKind<StylusLocus>>()
-            .replicate::<LocusPosition>()
-            .replicate::<LocusColor>()
-            .replicate::<LocusDetected>()
+        app.register_component::<Avatar>(ChannelDirection::Bidirectional);
+        app.register_component::<LocusPosition>(ChannelDirection::Bidirectional)
+            .add_interpolation(ComponentSyncMode::Full)
+            .add_linear_interpolation_fn();
+        app.register_component::<LocusColor>(ChannelDirection::Bidirectional);
+        app.register_component::<MouseLocus>(ChannelDirection::Bidirectional);
+        app.register_component::<FocusLocus>(ChannelDirection::Bidirectional);
+        app.register_component::<TouchprintLocus>(ChannelDirection::Bidirectional);
+        app.register_component::<StylusLocus>(ChannelDirection::Bidirectional);
 
-            .add_observer(Self::add_local_loci_children)
+        app
+            .add_observer(Self::observer_adds_loci_to_local_stratum)
+
+            .add_systems(Startup, Self::spawn_local_avatar)
 
             // TODO: Order before network stuff gets sent out. Find frame delay cause!!
             .add_systems(PreUpdate, 
@@ -31,17 +36,35 @@ impl Plugin for AvatarPlugin {
     }
 }
 impl AvatarPlugin {
-    /// Observer for adding local locus child entities to a freshly spawned [`GraniteRoot`] UI root node.
-    fn add_local_loci_children(
-        trigger: Trigger<OnAdd, GraniteRoot>,
+    /// Spawn the user's Avatar, the parent of all of their stuff. Replicated to servers with local client having authority.
+    fn spawn_local_avatar (
+        mut commands: Commands,
+        local_avatar_query: Query<&LocalAvatar>
+    ) {
+        if !local_avatar_query.is_empty() {
+            error!("Local Avatar detected on startup before spawning one?!");
+            return;
+        }
+
+        commands.spawn((
+            Name::new("Local Avatar"),
+            LocalAvatar,
+            Avatar::new_local(714),
+            ClientReplicate::default()
+        ));
+    }
+
+    /// Observer for adding local locus child entities to a freshly spawned [`LociStratum`].
+    /// TODO: How to not spawn for foreign loci stratum
+    fn observer_adds_loci_to_local_stratum(
+        trigger: Trigger<LocalLociStratumSpawned>,
         mut commands: Commands
     ) {
-        let image_node_color = LocusColor::MATERIAL_LIGHT.tertiary_color();
+
+        let image_node_color = LocusColor::MATERIAL_LIGHT.tertiary_as_color();
 
         let mouse_locus_entity = commands.spawn((
             Name::new("Local Avatar Mouse Locus"),
-            AvatarLocal,
-            AvatarProfile::SERVER, 
             Visibility::Hidden,
             BackgroundColor(image_node_color),
             BorderRadius::new(Val::ZERO, Val::Px(2.5), Val::Px(7.5), Val::Px(2.5)),
@@ -52,32 +75,32 @@ impl AvatarPlugin {
                 ..Default::default()
             },
             ImageNode::solid_color(image_node_color),
-            GlobalZIndex(1_000_000),
-            LocusKind{ locus_type: MouseLocus }, 
+            MouseLocus, 
             LocusPosition::default(),
             LocusColor::MATERIAL_LIGHT,
-            Replicated)
-        ).id();
+            ClientReplicate::default()
+        )).id();
+
         commands.entity(trigger.entity()).add_child(mouse_locus_entity);
     }
 
     /// Updates all local mouse loci by checking if its parent `GraniteRoot`'s `RelativeCursorPosition` detected a mouse.
     fn detect_local_mouse_loci(
         mut commands: Commands,
-        root_detection_query: Query<&RelativeCursorPosition, With<GraniteRoot>>,
-        mut local_mouse_locus: Query<
+        loci_stratum_query: Query<&RelativeCursorPosition, With<LociStratum>>,
+        mut local_mouse_locus_query: Query<
         (Entity, &Parent ,&mut Node, &mut LocusPosition, &mut Visibility, Option<&LocusDetected>),
-        (With<LocusKind<MouseLocus>>, With<AvatarLocal>)>
+        (With<MouseLocus>, Without<Replicated>)>
     ) {
         for (
             mouse_locus_entity, 
-            granite_root_parent, 
+            loci_stratum_parent, 
             mut mouse_locus_node,
-            mut locus_pos,
+            mut locus_position,
             mut node_visibility,
-            locus_detected) in &mut local_mouse_locus {
+            locus_detected) in &mut local_mouse_locus_query {
 
-            let Ok(parent_relcurpos) = root_detection_query.get(granite_root_parent.get()) else {
+            let Ok(parent_relcurpos) = loci_stratum_query.get(loci_stratum_parent.get()) else {
                 error!("Mouse locus parent GraniteRoot entity not found with RelativeCursorPosition component!");
                 continue;
             };
@@ -89,7 +112,7 @@ impl AvatarPlugin {
             };
 
             // Stick a copy in here, to replicate to others if needed.
-            locus_pos.set_pos(detected_relative_position);
+            locus_position.set_pos(detected_relative_position);
 
             mouse_locus_node.left = Val::Percent(detected_relative_position.x * 100.0);
             mouse_locus_node.top = Val::Percent(detected_relative_position.y * 100.0);
@@ -103,57 +126,41 @@ impl AvatarPlugin {
 
 /// Marker component separating out entities that belong to the local user and are not replicated from a server.
 #[derive(Component, Serialize, Deserialize, Clone, Debug, PartialEq, Reflect)]
-pub struct AvatarLocal;
+struct LocalAvatar;
 
-/// Main component for the entity representation of a user. Attached to everything associated with that user.
+/// Main component for the entity representation of a user. Parent of all entities the user controls.
 #[derive(Component, Serialize, Deserialize, Clone, Debug, PartialEq, Reflect)]
-pub struct AvatarProfile {
-    /// The Replicon ID assigned this user.
-    replicon_id: ClientId
+pub struct Avatar {
+    /// The Lightyear ID assigned this user.
+    lightyear_id: ClientId
 }
-impl Default for AvatarProfile {
+impl Default for Avatar {
     fn default() -> Self {
-        AvatarProfile { replicon_id: ClientId::new(1) }
+        Avatar { lightyear_id: ClientId::Local(1) }
     }
 }
-impl AvatarProfile {
-    /// Default profile for a host.
-    const SERVER: AvatarProfile = AvatarProfile { replicon_id: ClientId::SERVER };
-
-    /// Create a new profile from scratch.
-    fn new(rep_id: u64) -> Self {
-        AvatarProfile { replicon_id: ClientId::new(rep_id) }
+impl Avatar {
+    /// Create a new local profile from scratch.
+    fn new_local(local_id: u64) -> Self {
+        Avatar { lightyear_id: ClientId::Local(local_id) }
     }
-}
-
-/// Marker component for an entity that represents a user's presence, such as cursors or focuses.
-/// 
-/// ### Network Strategy
-/// Entities with this component are sent over the network to facilitate user-to-user communication within the host's Workbench.
-/// Loci data can be lost or dropped anytime without loss, and are not required to be saved away for a host transfer.
-/// Best sent on Ordered, Unreliable channels, with the client ideally having replication authority over their own loci.
-/// What kind of user representation this locus will convey. Generic for query filtering.
-#[derive(Component, Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Reflect)]
-pub struct LocusKind<K> {
-    /// Type marker for Query filtering.
-    locus_type: K
 }
 
 /// `MouseLocus` is a standard cursor that has an `x, y` relative screenspace position.
 #[derive(Component, Serialize, Deserialize, Clone, Copy, Debug, Default, PartialEq, Reflect)]
-pub struct MouseLocus;
+struct MouseLocus;
 
 /// `FocusLocus` is a highlighted section or button, for gamepad navigation.
 #[derive(Component, Serialize, Deserialize, Clone, Copy, Debug, Default, PartialEq, Reflect)]
-pub struct FocusLocus;
+struct FocusLocus;
 
 /// `TouchprintLocus` is a finger on a touchscreen.
 #[derive(Component, Serialize, Deserialize, Clone, Copy, Debug, Default, PartialEq, Reflect)]
-pub struct TouchprintLocus;
+struct TouchprintLocus;
 
 /// `StylusLocus` is a pressure-sensitive `Mouse` that may have a trail.
 #[derive(Component, Serialize, Deserialize, Clone, Copy, Debug, Default, PartialEq, Reflect)]
-pub struct StylusLocus;
+struct StylusLocus;
 
 /// Unique color scheme of the user's locus.
 #[derive(Component, Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Reflect)]
@@ -190,22 +197,26 @@ impl LocusColor {
     };
 
     /// Custom new color.
+    #[must_use = "Struct is initialized, but is never used!"]
     pub fn new(primary_color: Srgba, secondary_color: Srgba, tertiary_color: Srgba) -> Self {
         LocusColor { primary: primary_color, secondary: secondary_color, tertiary: tertiary_color }
     }
 
     /// Returns the primary color as the [`Color`] type.
-    pub fn primary_color(self) -> Color {
+    #[must_use = "You called for a Color, but never used it!"]
+    pub fn primary_as_color(self) -> Color {
         self.primary.into()
     }
 
     /// Returns the secondary color as the [`Color`] type.
-    pub fn secondary_color(self) -> Color {
+    #[must_use = "You called for a Color, but never used it!"]
+    pub fn secondary_as_color(self) -> Color {
         self.secondary.into()
     }
 
     /// Returns the tertiary color as the [`Color`] type.
-    pub fn tertiary_color(self) -> Color {
+    #[must_use = "You called for a Color, but never used it!"]
+    pub fn tertiary_as_color(self) -> Color {
         self.tertiary.into()
     }
 }
@@ -214,7 +225,7 @@ impl LocusColor {
 /// 
 /// Here for the network replication, too difficult to send over the `ImageNode` positions.
 #[derive(Component, Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Reflect)]
-pub struct LocusPosition {
+pub (crate) struct LocusPosition {
     /// Cheap xy to send over the network.
     pos: Vec2
 }
@@ -223,20 +234,24 @@ impl Default for LocusPosition {
         LocusPosition { pos: Vec2::new(0.5, 0.5) }
     }
 }
+impl Linear for LocusPosition{
+    fn lerp(start: &Self, other: &Self, t: f32) -> Self {
+        *start // We'll have to figure this out later.
+    }
+}
 impl LocusPosition {
     /// Gets the position vector.
-    pub fn get_pos(self) -> Vec2 {
+    fn pos(self) -> Vec2 {
         self.pos
     }
 
     /// Sets the position vector.
-    pub fn set_pos(&mut self, new_pos: Vec2) -> &mut Self {
+    fn set_pos(&mut self, new_pos: Vec2) -> &mut Self {
         self.pos = new_pos;
         self
     }
 }
-
 /// Marker component labeling the entity as having been detected, and will show up on rendering queries for that entity.  
 #[derive(Component, Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Reflect)]
-pub struct LocusDetected;
+pub (crate) struct LocusDetected;
 

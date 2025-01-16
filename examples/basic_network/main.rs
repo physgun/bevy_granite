@@ -1,7 +1,7 @@
 //! Starter test box for setting up networking capabilties.
 
 use bevy::{prelude::*, remote::{http::RemoteHttpPlugin, RemotePlugin}, window::{PresentMode, WindowCreated}};
-use bevy_granite::{workbench::structure::GraniteRoot, GranitePlugin};
+use bevy_granite::{prelude::GraniteRoot, GranitePlugin};
 
 fn main() {
     let mut app = App::new();
@@ -20,6 +20,7 @@ fn main() {
 
 }
 
+/// Set up example root
 fn setup_granite_root(mut commands: Commands) {
 
     let example_cam_one = commands.spawn(Camera2d).id();
@@ -30,6 +31,7 @@ fn setup_granite_root(mut commands: Commands) {
     ));
 }
 
+/// Set up window, try to mitigate frame delay.
 fn setup_new_windows(
     mut window_query: Query<&mut Window>
 ) {
