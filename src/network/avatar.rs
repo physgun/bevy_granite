@@ -2,7 +2,7 @@
 
 use serde::{Serialize, Deserialize};
 use bevy::{color::palettes::css, input::mouse::MouseMotion, math::Vec2, prelude::*, ui::{RelativeCursorPosition, UiSystem}};
-use lightyear::prelude::{client::ComponentSyncMode, AppComponentExt, ChannelDirection, ClientId, Linear, Replicated};
+use lightyear::prelude::{AppComponentExt, ChannelDirection, ClientId, Linear, Replicated};
 
 use lightyear::prelude::client::Replicate as ClientReplicate;
 
@@ -13,9 +13,9 @@ pub (crate) struct AvatarPlugin;
 impl Plugin for AvatarPlugin {
     fn build(&self, app: &mut App) {
         app.register_component::<Avatar>(ChannelDirection::Bidirectional);
-        app.register_component::<LocusPosition>(ChannelDirection::Bidirectional)
-            .add_interpolation(ComponentSyncMode::Full)
-            .add_linear_interpolation_fn();
+        app.register_component::<LocusPosition>(ChannelDirection::Bidirectional);
+            //.add_interpolation(ComponentSyncMode::Full);
+            //.add_linear_interpolation_fn();
         app.register_component::<LocusColor>(ChannelDirection::Bidirectional);
         app.register_component::<MouseLocus>(ChannelDirection::Bidirectional);
         app.register_component::<FocusLocus>(ChannelDirection::Bidirectional);
@@ -55,7 +55,6 @@ impl AvatarPlugin {
     }
 
     /// Observer for adding local locus child entities to a freshly spawned [`LociStratum`].
-    /// TODO: How to not spawn for foreign loci stratum
     fn observer_adds_loci_to_local_stratum(
         trigger: Trigger<LocalLociStratumSpawned>,
         mut commands: Commands
@@ -78,7 +77,6 @@ impl AvatarPlugin {
             MouseLocus, 
             LocusPosition::default(),
             LocusColor::MATERIAL_LIGHT,
-            ClientReplicate::default()
         )).id();
 
         commands.entity(trigger.entity()).add_child(mouse_locus_entity);
@@ -198,8 +196,8 @@ impl LocusColor {
 
     /// Custom new color.
     #[must_use = "Struct is initialized, but is never used!"]
-    pub fn new(primary_color: Srgba, secondary_color: Srgba, tertiary_color: Srgba) -> Self {
-        LocusColor { primary: primary_color, secondary: secondary_color, tertiary: tertiary_color }
+    pub fn new(primary: Srgba, secondary: Srgba, tertiary: Srgba) -> Self {
+        LocusColor { primary, secondary, tertiary }
     }
 
     /// Returns the primary color as the [`Color`] type.
@@ -225,6 +223,7 @@ impl LocusColor {
 /// 
 /// Here for the network replication, too difficult to send over the `ImageNode` positions.
 #[derive(Component, Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Reflect)]
+#[reflect(Component, Serialize, Deserialize, Debug)]
 pub (crate) struct LocusPosition {
     /// Cheap xy to send over the network.
     pos: Vec2

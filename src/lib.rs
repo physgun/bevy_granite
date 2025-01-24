@@ -8,11 +8,6 @@ use bevy::prelude::*;
 
 use bevy::winit::{UpdateMode, WinitSettings};
 
-use lightyear::client::config::ClientConfig;
-use lightyear::client::plugin::ClientPlugins as LightyearClientPlugins;
-use lightyear::server::config::ServerConfig;
-use lightyear::server::plugin::ServerPlugins as LightyearServerPlugins;
-
 use network::NetworkPlugin;
 use workbench::WorkbenchPlugin;
 
@@ -25,7 +20,7 @@ pub mod prelude {
 
     #[doc(hidden)]
     pub use crate::{
-        workbench::structure::GraniteRoot,
+        workbench::structure::{GraniteRoot, OrdonnanceStratum},
         network::avatar::{Avatar, LocusColor}
     };
 
@@ -40,8 +35,6 @@ impl Plugin for GranitePlugin {
                 focused_mode: UpdateMode::Continuous,
                 unfocused_mode: UpdateMode::Continuous,
             })
-            .add_plugins(LightyearClientPlugins::new(ClientConfig::default()))
-            .add_plugins(LightyearServerPlugins::new(ServerConfig::default()))
             .add_plugins(NetworkPlugin)
             .add_plugins(WorkbenchPlugin);
     }

@@ -3,6 +3,7 @@
 use serde::{Serialize, Deserialize};
 use bevy::{ui::RelativeCursorPosition, prelude::*};
 use lightyear::prelude::{AppComponentExt, ChannelDirection, Replicated};
+use lightyear::prelude::client::Replicate as ClientReplicate;
 
 /// The base UI logic of the Workbench level.
 pub (crate) struct StructurePlugin;
@@ -16,7 +17,7 @@ impl Plugin for StructurePlugin {
             .add_event::<LocalOrdonnanceStratumSpawned>()
 
             .add_observer(Self::observer_configures_new_local_loci_stratum)
-            .add_observer(Self::observer_configures_new_ordonnance_stratum)
+            .add_observer(Self::observer_configures_new_local_ordonnance_stratum)
             .add_observer(Self::observer_configures_new_granite_root);
     }
 }
@@ -42,22 +43,11 @@ impl StructurePlugin {
         // Unknown if future functionality will allow users to do more exotic things.
         granite_node.height = Val::Percent(100.0);
         granite_node.width = Val::Percent(100.0);
-
-        // These are for the temporary, debug UI should the Workbench be unavailable (it is).
-        granite_node.padding = UiRect::all(Val::Px(5.0));
-        granite_node.display = Display::Flex;
-        granite_node.flex_direction = FlexDirection::Row;
-        granite_node.flex_wrap = FlexWrap::WrapReverse;
-        granite_node.justify_content = JustifyContent::FlexStart;
-        granite_node.align_items = AlignItems::FlexEnd;
-        granite_node.align_content = AlignContent::FlexEnd;
-        granite_node.row_gap = Val::Px(5.0);
-        granite_node.column_gap = Val::Px(5.0);
     }
 
     /// Observer to configure newly spawned [`OrdonnanceStratum`] nodes.
     /// Only configures locally spawned ones! Replicated ones don't need configuring and aren't touched.
-    fn observer_configures_new_ordonnance_stratum(
+    fn observer_configures_new_local_ordonnance_stratum(
         trigger: Trigger<LocalOrdonnanceStratumSpawned>,
         mut commands: Commands,
         mut ordonnance_stratum_query: Query<(Entity, &mut Node), With<OrdonnanceStratum>>
@@ -76,6 +66,17 @@ impl StructurePlugin {
             ;
         ordonnance_stratum_node.height = Val::Percent(100.0);
         ordonnance_stratum_node.width = Val::Percent(100.0);
+
+        // These are for the temporary, debug UI should the Workbench be unavailable (it is).
+        ordonnance_stratum_node.padding = UiRect::all(Val::Px(5.0));
+        ordonnance_stratum_node.display = Display::Flex;
+        ordonnance_stratum_node.flex_direction = FlexDirection::Row;
+        ordonnance_stratum_node.flex_wrap = FlexWrap::WrapReverse;
+        ordonnance_stratum_node.justify_content = JustifyContent::FlexStart;
+        ordonnance_stratum_node.align_items = AlignItems::FlexEnd;
+        ordonnance_stratum_node.align_content = AlignContent::FlexEnd;
+        ordonnance_stratum_node.row_gap = Val::Px(5.0);
+        ordonnance_stratum_node.column_gap = Val::Px(5.0);
     }
 
     /// Observer to configure newly spawned [`LociStratum`] nodes.
@@ -93,7 +94,8 @@ impl StructurePlugin {
         // Stratum nodes are layered over the GraniteRoot node, for wholesale network replication.
         commands.entity(loci_stratum_entity).insert((
             Name::new("Loci Stratum Node"), 
-            GlobalZIndex(1_000_000)
+            GlobalZIndex(1_000_000),
+            ClientReplicate::default()
         ));
         loci_stratum_node.height = Val::Percent(100.0);
         loci_stratum_node.width = Val::Percent(100.0);
@@ -118,7 +120,7 @@ pub (crate) struct LocalLociStratumSpawned;
 /// Marker component for the stratum node containing all of the Workbench UI elements. Replicated to clients if hosting on the Workbench level.
 #[derive(Component, Serialize, Deserialize, Clone, Debug, PartialEq, Reflect)]
 #[require(Node)]
-pub (crate) struct OrdonnanceStratum;
+pub struct OrdonnanceStratum;
 
 /// Event to be triggered when a new local [`OrdonnanceStratum`] is spawned.
 /// This is so observers can configure just the local one, and ignore replicated ones.
