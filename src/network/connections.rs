@@ -2,21 +2,16 @@
 
 use core::net::{IpAddr, Ipv6Addr};
 
-use serde::{Serialize, Deserialize};
 use bevy::prelude::*;
+use serde::{Deserialize, Serialize};
 
 /// Plugin defining connection entities.
-pub (crate) struct ConnectionsPlugin;
+pub(crate) struct ConnectionsPlugin;
 impl Plugin for ConnectionsPlugin {
-    fn build(&self, app: &mut App) {
-        
-    }
+    fn build(&self, app: &mut App) {}
 }
 
-
 // TODO: Honestly, the network libraries handle all of this. Do we really need any of it?
-
-
 
 /// Main component for an entity representing some kind of network connection.
 #[derive(Component, Serialize, Deserialize, Clone, Copy, Debug, PartialEq)]
@@ -30,28 +25,34 @@ pub struct Connection {
     /// The... connection status. Not much more to say about it.
     status: ConnectionStatus,
     /// Describes if the connection is sharing the material project or sharing both the material and workbench UI.
-    level: ConnectionLevel
+    level: ConnectionLevel,
 }
 impl Default for Connection {
     fn default() -> Self {
-        Connection { 
-            address: IpAddr::V6(Ipv6Addr::UNSPECIFIED), 
-            port: 7142, 
-            topology: ConnectionTopology::CentralServer, 
-            status: ConnectionStatus::Initialized, 
-            level: ConnectionLevel::Material 
+        Connection {
+            address: IpAddr::V6(Ipv6Addr::UNSPECIFIED),
+            port: 7142,
+            topology: ConnectionTopology::CentralServer,
+            status: ConnectionStatus::Initialized,
+            level: ConnectionLevel::Material,
         }
     }
 }
 impl Connection {
     /// Spawns a new [`Connection`] with custom parameters.
-    pub fn new(address: IpAddr, port: u16, topology: ConnectionTopology, status: ConnectionStatus, level: ConnectionLevel) -> Self {
-        Connection { 
-            address, 
-            port, 
-            topology, 
-            status, 
-            level
+    pub fn new(
+        address: IpAddr,
+        port: u16,
+        topology: ConnectionTopology,
+        status: ConnectionStatus,
+        level: ConnectionLevel,
+    ) -> Self {
+        Connection {
+            address,
+            port,
+            topology,
+            status,
+            level,
         }
     }
 }
@@ -67,7 +68,7 @@ pub enum ConnectionTopology {
     /// Represents a connection to a relay server, who interfaces with foreign data types.
     RelayServer,
     /// Represents a connection to a resource server, who is delegated simulation work.
-    ResourceServer
+    ResourceServer,
 }
 
 /// The... connection status. Not much more to say about it.
@@ -83,7 +84,7 @@ pub enum ConnectionStatus {
     /// This connection is in the process of establishing itself.
     Connecting,
     /// This connection has been established.
-    Connected
+    Connected,
 }
 
 /// Describes if the connection is sharing the material project or sharing both the material and workbench UI.
@@ -94,5 +95,5 @@ pub enum ConnectionLevel {
     Material,
     /// Sharing data on both the project and the authority's workbench UI too.
     /// Allows one to interact directly with the UI of the central server.
-    Workbench
+    Workbench,
 }
