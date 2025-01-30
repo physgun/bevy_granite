@@ -13,14 +13,12 @@
 use core::fmt::Debug;
 
 use bevy::{
+    log::{Level, LogPlugin},
     prelude::*,
     remote::{http::RemoteHttpPlugin, RemotePlugin},
     window::{PresentMode, WindowCreated},
 };
-use bevy_granite::prelude::{
-    GranitePlugin, GraniteRoot, OrdonnanceStratum, StartedConnecting, StartedHostServer,
-    StoppedHostServer, WasDisconnected,
-};
+use bevy_granite::prelude::{GranitePlugin, GraniteRoot, OrdonnanceStratum};
 use lightyear::prelude::client::NetworkingState as ClientNetworkingState;
 use lightyear::prelude::server::NetworkingState as ServerNetworkingState;
 use lightyear::prelude::{client::ClientCommands, server::ServerCommands, Replicated};
@@ -28,19 +26,23 @@ use lightyear::prelude::{client::ClientCommands, server::ServerCommands, Replica
 fn main() {
     let mut app = App::new();
 
-    app.add_plugins(DefaultPlugins)
-        .add_plugins(RemotePlugin::default())
-        .add_plugins(RemoteHttpPlugin::default())
-        .add_plugins(GranitePlugin)
-        .add_event::<ButtonModified>()
-        .add_systems(
-            Startup,
-            (setup_granite_root, setup_local_connection_box).chain(),
-        )
-        .add_systems(
-            Update,
-            (setup_new_windows).run_if(on_event::<WindowCreated>),
-        );
+    app.add_plugins(DefaultPlugins.set(LogPlugin {
+        level: Level::INFO,
+        filter: "wgpu=warn,lightyear=debug".to_string(),
+        custom_layer: |_| None,
+    }))
+    .add_plugins(RemotePlugin::default())
+    .add_plugins(RemoteHttpPlugin::default())
+    .add_plugins(GranitePlugin)
+    .add_event::<ButtonModified>()
+    .add_systems(
+        Startup,
+        (setup_granite_root, setup_local_connection_box).chain(),
+    )
+    .add_systems(
+        Update,
+        (setup_new_windows).run_if(on_event::<WindowCreated>),
+    );
 
     app.run();
 }
@@ -107,12 +109,12 @@ fn setup_local_connection_box(
                         .observe(observer_changes_bg_on::<Pointer<Up>>(BUTTON_BG_IDLE))
                         .observe(observer_changes_bg_on::<ButtonModified>(BUTTON_BG_IDLE))
                         .observe(observer_toggles_server_button_on::<Pointer<Click>>())
-                        .observe(observer_sets_button_disable_on::<WasDisconnected>(
-                            Modifier::Enabled,
-                        ))
-                        .observe(observer_sets_button_disable_on::<StartedConnecting>(
-                            Modifier::Disabled,
-                        ))
+                        //.observe(observer_sets_button_disable_on::<WasDisconnected>(
+                        //    Modifier::Enabled,
+                        //))
+                        //.observe(observer_sets_button_disable_on::<StartedConnecting>(
+                        //    Modifier::Disabled,
+                        //))
                         .with_child(quick_text_node(String::from("Host Local Server")));
                     second_builder
                         .spawn(quick_button_node())
@@ -123,12 +125,12 @@ fn setup_local_connection_box(
                         .observe(observer_changes_bg_on::<Pointer<Up>>(BUTTON_BG_IDLE))
                         .observe(observer_changes_bg_on::<ButtonModified>(BUTTON_BG_IDLE))
                         .observe(observer_toggles_client_button_on::<Pointer<Click>>())
-                        .observe(observer_sets_button_disable_on::<StoppedHostServer>(
-                            Modifier::Enabled,
-                        ))
-                        .observe(observer_sets_button_disable_on::<StartedHostServer>(
-                            Modifier::Disabled,
-                        ))
+                        //.observe(observer_sets_button_disable_on::<StoppedHostServer>(
+                        //    Modifier::Enabled,
+                        //))
+                        //.observe(observer_sets_button_disable_on::<StartedHostServer>(
+                        //    Modifier::Disabled,
+                        //))
                         .with_child(quick_text_node(String::from("Connect To Local Server")));
                 });
         });
@@ -251,18 +253,12 @@ fn observer_toggles_server_button_on<E: Debug + Clone + Reflect>() -> impl Fn(
         for (parent_entity, mut button_text) in &mut text_parent_query {
             if parent_entity.get() == trigger.entity() {
                 match *server_state.get() {
-                    ServerNetworkingState::Stopped => {
+                    ServerNetworkingState::Stopped | ServerNetworkingState::Stopping => {
                         commands.start_server();
                         button_text.0 = String::from("Shut Down Local Server");
-                        for client_button_entity in &client_buttons_query {
-                            commands.trigger_targets(StartedHostServer, client_button_entity);
-                        }
                     }
-                    ServerNetworkingState::Started => {
+                    ServerNetworkingState::Started | ServerNetworkingState::Starting => {
                         commands.stop_server();
-                        for client_button_entity in &client_buttons_query {
-                            commands.trigger_targets(StoppedHostServer, client_button_entity);
-                        }
                         button_text.0 = String::from("Host Local Server");
                     }
                 }
@@ -304,15 +300,9 @@ fn observer_toggles_client_button_on<E: Debug + Clone + Reflect>() -> impl Fn(
                     ClientNetworkingState::Disconnected => {
                         commands.connect_client();
                         button_text.0 = String::from("Disconnect From Local Server");
-                        for server_button_entity in &server_buttons_query {
-                            commands.trigger_targets(StartedConnecting, server_button_entity);
-                        }
                     }
                     ClientNetworkingState::Connected | ClientNetworkingState::Connecting => {
                         commands.disconnect_client();
-                        for server_button_entity in &server_buttons_query {
-                            commands.trigger_targets(WasDisconnected, server_button_entity);
-                        }
                         button_text.0 = String::from("Connect To Local Server");
                     }
                 }

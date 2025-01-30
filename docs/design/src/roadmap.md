@@ -6,9 +6,8 @@
 
 #### [ ] Ping Server As Client
 - [x] Connections as entities.
-- [ ] Set up default client with host server infrastructure.
-    - Four operations: Start Server, End Server, Connect To Server, Leave Server
-- [ ] Setup basic_network example with test UI.
+- [x] Set up default client with host server infrastructure.
+- [x] Setup basic_network example with test UI.
 - [ ] Track connected servers
 - [ ] Track connected clients
 - [ ] Handle connections as server
@@ -32,6 +31,7 @@
 - [ ] Have server perform operation and show client
 
 ### [ ] Basic UI Spaces
+- [ ] Territories with border fields (Use Nodes fields?)
 - [ ] Draggable Territories
 - [ ] Resizable Territories
 

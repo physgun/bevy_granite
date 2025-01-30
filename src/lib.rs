@@ -1,4 +1,8 @@
 //! crate level doc for `bevy_granite`
+//!
+//! # Features
+//! Write the feature things here, eventually.
+//! We got uuuuuuuuuuuuuuuuhhhhh... `std` and `networking`, which are default.
 
 // Lints incompatible with Bevy
 #![allow(
@@ -14,27 +18,34 @@ use bevy::prelude::*;
 
 use bevy::winit::{UpdateMode, WinitSettings};
 
-use network::NetworkPlugin;
 use workbench::WorkbenchPlugin;
 
-mod network;
 mod workbench;
+
+#[cfg(feature = "networking")]
+use network::NetworkPlugin;
+#[cfg(feature = "networking")]
+mod network;
 
 /// Re-export of all of Granite's common tools.
 #[expect(
     clippy::pub_use,
-    reason = "Easier to control what is exposed during early development. Organize into pub modules later when the final design is clearer. "
+    reason = "Easier to control what is exposed during early development. Organize into pub modules later when the final design is clearer. Or don't!"
 )]
 pub mod prelude {
 
     #[doc(hidden)]
     pub use crate::{
-        network::avatar::{Avatar, LocusColor},
-        network::servers::{
-            StartedConnecting, StartedHostServer, StoppedHostServer, WasDisconnected,
-        },
         workbench::structure::{GraniteRoot, OrdonnanceStratum},
         GranitePlugin,
+    };
+
+    #[cfg(feature = "networking")]
+    #[doc(hidden)]
+    pub use crate::network::{
+        avatar::{Avatar, LocusColor},
+        lightyear::{get_hostserver_config, get_local_client_config, get_netcode_client_config},
+        state::LocalNetworkState,
     };
 }
 
@@ -46,7 +57,9 @@ impl Plugin for GranitePlugin {
             focused_mode: UpdateMode::Continuous,
             unfocused_mode: UpdateMode::Continuous,
         })
-        .add_plugins(NetworkPlugin)
         .add_plugins(WorkbenchPlugin);
+
+        #[cfg(feature = "networking")]
+        app.add_plugins(NetworkPlugin);
     }
 }

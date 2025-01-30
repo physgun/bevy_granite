@@ -1,7 +1,6 @@
 //! The network layer of Bevy Components representing the user, which are shared and replicated between hostservers.
 
 use bevy::{
-    color::palettes::css,
     input::mouse::MouseMotion,
     math::Vec2,
     prelude::*,
@@ -210,13 +209,6 @@ impl LocusColor {
     /// Default Light
     const MATERIAL_LIGHT: LocusColor = LocusColor {
         primary: Color::oklcha(1.0, 0.0, 0.0, 1.0),
-        secondary: Color::oklcha(0.7, 0.15, 85.0, 1.0),
-        tertiary: Color::oklcha(0.75, 0.15, 225.0, 1.0),
-    };
-
-    /// Default Dark
-    const MATERIAL_DARK: LocusColor = LocusColor {
-        primary: Color::oklcha(0.0, 0.0, 0.0, 1.0),
         secondary: Color::oklcha(0.7, 0.15, 85.0, 1.0),
         tertiary: Color::oklcha(0.75, 0.15, 225.0, 1.0),
     };
