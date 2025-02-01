@@ -1,15 +1,13 @@
 //! The basis for the workbench UI, defining the space where it will take place.
 
 use bevy::{prelude::*, ui::RelativeCursorPosition};
-use lightyear::prelude::client::Replicate as ClientReplicate;
-use lightyear::prelude::{AppComponentExt, ChannelDirection, Replicated};
+use lightyear::prelude::{AppComponentExt, ChannelDirection, ClientReplicate, Replicated};
 use serde::{Deserialize, Serialize};
 
 /// The base UI logic of the Workbench level.
 pub(crate) struct StructurePlugin;
 impl Plugin for StructurePlugin {
     fn build(&self, app: &mut App) {
-
         #[cfg(feature = "networking")]
         {
             app.register_component::<LociStratum>(ChannelDirection::Bidirectional);
@@ -91,7 +89,6 @@ impl StructurePlugin {
         ordonnance_stratum_node.flex_wrap = FlexWrap::WrapReverse;
         ordonnance_stratum_node.justify_content = JustifyContent::FlexStart;
         ordonnance_stratum_node.align_items = AlignItems::FlexEnd;
-        ordonnance_stratum_node.align_content = AlignContent::FlexEnd;
         ordonnance_stratum_node.row_gap = Val::Px(5.0);
         ordonnance_stratum_node.column_gap = Val::Px(5.0);
     }
@@ -117,7 +114,7 @@ impl StructurePlugin {
         commands.entity(loci_stratum_entity).insert((
             Name::new("Loci Stratum Node"),
             GlobalZIndex(1_000_000),
-            ClientReplicate::default(),
+            ClientReplicate::default()
         ));
         loci_stratum_node.height = Val::Percent(100.0);
         loci_stratum_node.width = Val::Percent(100.0);

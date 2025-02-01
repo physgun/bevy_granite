@@ -38,7 +38,10 @@ pub mod prelude {
     #[doc(hidden)]
     pub use crate::network::{
         avatar::{Avatar, LocusColor},
-        lightyear::{get_hostserver_config, get_local_client_config, get_netcode_client_config},
+        lightyear::{
+            get_hostserver_config, get_local_client_config, get_netcode_client_config,
+            get_server_config,
+        },
         state::LocalNetworkState,
     };
 
@@ -53,6 +56,7 @@ pub mod prelude {
 pub struct GranitePlugin;
 impl Plugin for GranitePlugin {
     fn build(&self, app: &mut App) {
+        // Load first, has Resources used in later plugins.
         #[cfg(feature = "networking")]
         app.add_plugins(NetworkPlugin);
 

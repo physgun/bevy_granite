@@ -25,4 +25,3 @@ pub enum LocalNetworkState {
     /// Connecting to a remote server as a client.
     Client,
 }
-

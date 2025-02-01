@@ -24,7 +24,7 @@ pub(crate) struct LightyearPlugin;
 impl Plugin for LightyearPlugin {
     fn build(&self, app: &mut App) {
         app
-            // Load a hostserver config by default, even though we start offline. 
+            // Load a hostserver config by default, even though we start offline.
             // Just to have the resource hot and ready to go.
             .add_plugins(LightyearServerPlugins::new(get_hostserver_config(
                 Ipv4Addr::LOCALHOST,
@@ -37,7 +37,7 @@ impl Plugin for LightyearPlugin {
 /// Simple test port.
 const TEST_PORT: u16 = 7142;
 
-/// Gets the lightyear server config for a default, basic hostserver configuration.
+/// Gets a lightyear server config template for a default, basic hostserver configuration.
 #[must_use = "You called for a ServerConfig, but never used it?"]
 pub fn get_hostserver_config(addr: Ipv4Addr, port: u16) -> ServerConfig {
     ServerConfig {
@@ -57,7 +57,7 @@ pub fn get_hostserver_config(addr: Ipv4Addr, port: u16) -> ServerConfig {
     }
 }
 
-/// Gets the lightyear local client config for a default, basic hostserver configuration.
+/// Gets a lightyear local client config template for a default, basic hostserver configuration.
 #[must_use = "You called for a ClientConfig, but never used it?"]
 pub fn get_local_client_config(id: u64) -> ClientConfig {
     ClientConfig {
@@ -70,7 +70,27 @@ pub fn get_local_client_config(id: u64) -> ClientConfig {
     }
 }
 
-/// Gets the lightyear local client config for a default, basic hostserver configuration.
+/// Gets a lightyear server config template for a default, basic server configuration.
+#[must_use = "You called for a ServerConfig, but never used it?"]
+pub fn get_server_config(addr: Ipv4Addr, port: u16) -> ServerConfig {
+    ServerConfig {
+        shared: SharedConfig {
+            mode: Mode::Separate,
+            ..Default::default()
+        },
+        net: vec![ServerNetConfig::Netcode {
+            config: ServerNetcodeConfig::default()
+                .with_protocol_id(0)
+                .with_key([0; 32]),
+            io: ServerIoConfig::from_transport(ServerTransport::UdpSocket(SocketAddr::V4(
+                SocketAddrV4::new(addr, port),
+            ))),
+        }],
+        ..Default::default()
+    }
+}
+
+/// Gets a lightyear netcode client config template.
 #[must_use = "You called for a ClientConfig, but never used it?"]
 pub fn get_netcode_client_config(
     server_addr: Ipv4Addr,
@@ -81,7 +101,7 @@ pub fn get_netcode_client_config(
 ) -> ClientConfig {
     ClientConfig {
         shared: SharedConfig {
-            mode: Mode::HostServer,
+            mode: Mode::Separate,
             ..Default::default()
         },
         net: NetConfig::Netcode {

@@ -17,6 +17,8 @@ use crate::workbench::structure::{LocalLociStratumSpawned, LociStratum};
 pub(crate) struct AvatarPlugin;
 impl Plugin for AvatarPlugin {
     fn build(&self, app: &mut App) {
+
+
         app.register_component::<Avatar>(ChannelDirection::Bidirectional);
         app.register_component::<LocusPosition>(ChannelDirection::Bidirectional);
         //.add_interpolation(ComponentSyncMode::Full);
@@ -77,12 +79,14 @@ impl AvatarPlugin {
                 MouseLocus,
                 LocusPosition::default(),
                 LocusColor::MATERIAL_LIGHT,
+                ClientReplicate::default(),
             ))
             .id();
 
         commands
             .entity(trigger.entity())
-            .add_child(mouse_locus_entity);
+            .add_child(mouse_locus_entity)
+            .insert(ClientReplicate::default());
     }
 
     /// Updates all local mouse loci by checking if its parent `GraniteRoot`'s `RelativeCursorPosition` detected a mouse.
