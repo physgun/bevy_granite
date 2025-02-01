@@ -18,14 +18,14 @@ use bevy::prelude::*;
 
 use bevy::winit::{UpdateMode, WinitSettings};
 
-use workbench::WorkbenchPlugin;
-
-mod workbench;
-
 #[cfg(feature = "networking")]
 use network::NetworkPlugin;
 #[cfg(feature = "networking")]
 mod network;
+
+use workbench::WorkbenchPlugin;
+
+mod workbench;
 
 /// Re-export of all of Granite's common tools.
 #[expect(
@@ -34,12 +34,6 @@ mod network;
 )]
 pub mod prelude {
 
-    #[doc(hidden)]
-    pub use crate::{
-        workbench::structure::{GraniteRoot, OrdonnanceStratum},
-        GranitePlugin,
-    };
-
     #[cfg(feature = "networking")]
     #[doc(hidden)]
     pub use crate::network::{
@@ -47,19 +41,25 @@ pub mod prelude {
         lightyear::{get_hostserver_config, get_local_client_config, get_netcode_client_config},
         state::LocalNetworkState,
     };
+
+    #[doc(hidden)]
+    pub use crate::{
+        workbench::structure::{GraniteRoot, OrdonnanceStratum},
+        GranitePlugin,
+    };
 }
 
 /// Primary documentation for the Granite plugin.
 pub struct GranitePlugin;
 impl Plugin for GranitePlugin {
     fn build(&self, app: &mut App) {
+        #[cfg(feature = "networking")]
+        app.add_plugins(NetworkPlugin);
+
         app.insert_resource(WinitSettings {
             focused_mode: UpdateMode::Continuous,
             unfocused_mode: UpdateMode::Continuous,
         })
         .add_plugins(WorkbenchPlugin);
-
-        #[cfg(feature = "networking")]
-        app.add_plugins(NetworkPlugin);
     }
 }

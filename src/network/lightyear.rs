@@ -18,25 +18,19 @@ use lightyear::client::config::{ClientConfig, NetcodeConfig};
 use lightyear::client::plugin::ClientPlugins as LightyearClientPlugins;
 use lightyear::prelude::client::{Authentication, ClientTransport, IoConfig, NetConfig};
 
-use super::state::LocalNetworkState;
-
 /// Plugin defining server entities and their interactions with network libraries.
 #[rustfmt::skip]
 pub(crate) struct LightyearPlugin;
 impl Plugin for LightyearPlugin {
     fn build(&self, app: &mut App) {
         app
-            // Load a hostserver config by default, even though we start offline.
+            // Load a hostserver config by default, even though we start offline. 
+            // Just to have the resource hot and ready to go.
             .add_plugins(LightyearServerPlugins::new(get_hostserver_config(
                 Ipv4Addr::LOCALHOST,
                 TEST_PORT,
             )))
-            .add_plugins(LightyearClientPlugins::new(get_local_client_config(0)))
-            .add_systems(
-                PreUpdate,
-                (set_up_lightyear_configs)
-                    .run_if(on_event::<StateTransitionEvent<LocalNetworkState>>),
-            );
+            .add_plugins(LightyearClientPlugins::new(get_local_client_config(0)));
     }
 }
 
@@ -103,44 +97,5 @@ pub fn get_netcode_client_config(
             ))),
         },
         ..Default::default()
-    }
-}
-
-/// Edit lightyear's server and client resources whenever the `LocalNetworkState` changes.
-fn set_up_lightyear_configs(
-    local_network_state: Res<State<LocalNetworkState>>,
-    mut server_configs: ResMut<ServerConfig>,
-    mut client_configs: ResMut<ClientConfig>,
-) {
-    match *local_network_state.get() {
-        LocalNetworkState::Offline => {}
-        LocalNetworkState::HostServer {
-            server_addr,
-            server_port,
-        } => {
-            *server_configs = get_hostserver_config(server_addr, server_port);
-            *client_configs = get_local_client_config(0);
-        }
-        LocalNetworkState::Server {
-            server_addr,
-            server_port,
-        } => {
-            *server_configs = get_hostserver_config(server_addr, server_port);
-        }
-        LocalNetworkState::Client {
-            server_addr,
-            server_port,
-            client_id,
-            client_addr,
-            client_port,
-        } => {
-            *client_configs = get_netcode_client_config(
-                server_addr,
-                server_port,
-                client_id,
-                client_addr,
-                client_port,
-            );
-        }
     }
 }

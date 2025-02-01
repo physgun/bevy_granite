@@ -9,8 +9,12 @@ use serde::{Deserialize, Serialize};
 pub(crate) struct StructurePlugin;
 impl Plugin for StructurePlugin {
     fn build(&self, app: &mut App) {
-        app.register_component::<LociStratum>(ChannelDirection::Bidirectional);
-        app.register_component::<OrdonnanceStratum>(ChannelDirection::ServerToClient);
+
+        #[cfg(feature = "networking")]
+        {
+            app.register_component::<LociStratum>(ChannelDirection::Bidirectional);
+            app.register_component::<OrdonnanceStratum>(ChannelDirection::ServerToClient);
+        };
 
         app.add_event::<LocalLociStratumSpawned>()
             .add_event::<LocalOrdonnanceStratumSpawned>()
