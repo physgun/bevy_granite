@@ -31,7 +31,7 @@ fn main() {
 
     app.add_plugins(DefaultPlugins.set(LogPlugin {
         level: Level::INFO,
-        filter: "wgpu=warn,lightyear=debug".to_string(),
+        filter: "wgpu=warn,lightyear=info".to_string(),
         custom_layer: |_| None,
     }))
     .add_plugins(RemotePlugin::default())
@@ -154,7 +154,7 @@ fn setup_hostserver_buttons(
     commands.disconnect_client();
     commands.stop_server();
 
-    *lightyear_server_configs = get_hostserver_config(Ipv4Addr::LOCALHOST, 5000);
+    *lightyear_server_configs = get_hostserver_config(Ipv4Addr::LOCALHOST, 7142);
     *lightyear_client_configs = get_local_client_config(0);
 
     for button_box_entity in &button_box_query {
@@ -176,7 +176,6 @@ fn setup_hostserver_buttons(
                         second_level_builder
                             .spawn(quick_button_node())
                             .observe(observer_starts_server_on::<Pointer<Click>>())
-                            .observe(observer_connects_client_on::<Pointer<Click>>())
                             .with_child(quick_text_node(String::from("Host Server")));
                     });
 
@@ -186,7 +185,6 @@ fn setup_hostserver_buttons(
                     .with_children(|second_level_builder| {
                         second_level_builder
                             .spawn(quick_button_node())
-                            .observe(observer_disconnects_client_on::<Pointer<Click>>())
                             .observe(observer_stops_server_on::<Pointer<Click>>())
                             .with_child(quick_text_node(String::from("Shut Down Server")));
                     });
@@ -203,7 +201,7 @@ fn setup_server_buttons(
     commands.disconnect_client();
     commands.stop_server();
 
-    *lightyear_server_configs = get_server_config(Ipv4Addr::LOCALHOST, 5000);
+    *lightyear_server_configs = get_server_config(Ipv4Addr::UNSPECIFIED, 7142);
 
     for button_box_entity in &button_box_query {
         commands
@@ -249,7 +247,7 @@ fn setup_client_buttons(
     commands.stop_server();
 
     *lightyear_client_configs =
-        get_netcode_client_config(Ipv4Addr::LOCALHOST, 5000, 1, Ipv4Addr::LOCALHOST, 4000);
+        get_netcode_client_config(Ipv4Addr::LOCALHOST, 7142, 1, Ipv4Addr::UNSPECIFIED, 0);
 
     for button_box_entity in &button_box_query {
         commands

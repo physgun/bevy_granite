@@ -1,7 +1,7 @@
 //! The basis for the workbench UI, defining the space where it will take place.
 
 use bevy::{prelude::*, ui::RelativeCursorPosition};
-use lightyear::prelude::{AppComponentExt, ChannelDirection, ClientReplicate, Replicated};
+use lightyear::prelude::{AppComponentExt, ChannelDirection, Replicated};
 use serde::{Deserialize, Serialize};
 
 /// The base UI logic of the Workbench level.
@@ -114,8 +114,9 @@ impl StructurePlugin {
         commands.entity(loci_stratum_entity).insert((
             Name::new("Loci Stratum Node"),
             GlobalZIndex(1_000_000),
-            ClientReplicate::default()
+            PickingBehavior::IGNORE,
         ));
+        loci_stratum_node.position_type = PositionType::Absolute;
         loci_stratum_node.height = Val::Percent(100.0);
         loci_stratum_node.width = Val::Percent(100.0);
     }

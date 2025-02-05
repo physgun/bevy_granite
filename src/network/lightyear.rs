@@ -19,7 +19,6 @@ use lightyear::client::plugin::ClientPlugins as LightyearClientPlugins;
 use lightyear::prelude::client::{Authentication, ClientTransport, IoConfig, NetConfig};
 
 /// Plugin defining server entities and their interactions with network libraries.
-#[rustfmt::skip]
 pub(crate) struct LightyearPlugin;
 impl Plugin for LightyearPlugin {
     fn build(&self, app: &mut App) {
