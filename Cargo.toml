@@ -4,12 +4,107 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-bevy = { version = "0.15", features = ["dynamic_linking"] }
-lightyear = "0.17.1"
-leafwing-input-manager = 0.16.0"
+bevy = { version = "0.15", features = ["dynamic_linking", "bevy_remote", "serialize"] }
+serde = { version = "1", features = ["derive"] }
+lightyear = { version = "0.19.0", optional = true }
+
+[features]
+default = ["std", "networking"]
+std = []
+networking = ["std", "dep:lightyear"]
 
 [profile.dev]
 opt-level = 1
 
 [profile.dev.package."*"]
 opt-level = 3
+
+# Rust Lints
+[lints.rust]
+unused_import_braces = "warn"
+unreachable_pub = "warn"
+missing_docs = "deny"
+unsafe_code = "forbid"
+
+# Clippy Lints
+[lints.clippy]
+pedantic = "warn"
+style = "warn"
+
+# Cherry-picked Clippy Restriction-type Lints
+absolute_paths = "warn"
+alloc_instead_of_core = "warn"
+allow_attributes = "warn"
+allow_attributes_without_reason = "warn"
+arithmetic_side_effects = "warn"
+as_conversions = "warn"
+as_underscore = "warn"
+cfg_not_test = "warn"
+clone_on_ref_ptr = "warn"
+create_dir = "warn"
+dbg_macro = "warn"
+deref_by_slicing = "warn"
+else_if_without_else = "warn"
+empty_enum_variants_with_brackets = "warn"
+empty_structs_with_brackets = "warn"
+error_impl_error = "warn"
+exhaustive_enums = "warn"
+exit = "warn"
+expect_used = "warn"
+field_scoped_visibility_modifiers = "warn"
+filetype_is_file = "warn"
+float_cmp_const = "warn"
+fn_to_numeric_cast_any = "warn"
+if_then_some_else_none = "warn"
+impl_trait_in_params = "warn"
+indexing_slicing = "warn"
+infinite_loop = "warn"
+integer_division = "warn"
+integer_division_remainder_used = "warn"
+large_include_file = "warn"
+let_underscore_must_use = "warn"
+let_underscore_untyped = "warn"
+lossy_float_literal = "warn"
+map_err_ignore = "warn"
+missing_assert_message = "warn"
+missing_docs_in_private_items = "warn"
+mixed_read_write_in_expression = "warn"
+mod_module_files = "warn"
+multiple_inherent_impl = "warn"
+non_zero_suggestions = "warn"
+panic = "warn"
+panic_in_result_fn = "warn"
+partial_pub_fields = "warn"
+pattern_type_mismatch = "warn"
+print_stderr = "warn"
+print_stdout = "warn"
+pub_use = "warn"
+pub_without_shorthand = "warn"
+rc_mutex = "warn"
+redundant_type_annotations = "warn"
+ref_patterns = "warn"
+renamed_function_params = "warn"
+rest_pat_in_fully_bound_structs = "warn"
+same_name_method = "warn"
+semicolon_outside_block = "warn"
+shadow_reuse = "warn"
+shadow_same = "warn"
+shadow_unrelated = "warn"
+single_char_lifetime_names = "warn"
+std_instead_of_alloc = "warn"
+std_instead_of_core = "warn"
+suspicious_xor_used_as_pow = "warn"
+tests_outside_test_module = "warn"
+todo = "warn"
+try_err = "warn"
+unimplemented = "warn"
+unnecessary_safety_comment = "warn"
+unnecessary_safety_doc = "warn"
+unnecessary_self_imports = "warn"
+unneeded_field_pattern = "warn"
+unreachable = "warn"
+unseparated_literal_suffix = "warn"
+unused_result_ok = "warn"
+unwrap_in_result = "warn"
+unwrap_used = "warn"
+use_debug = "warn"
