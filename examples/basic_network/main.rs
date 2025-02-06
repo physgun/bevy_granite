@@ -154,7 +154,7 @@ fn setup_hostserver_buttons(
     commands.disconnect_client();
     commands.stop_server();
 
-    *lightyear_server_configs = get_hostserver_config(Ipv4Addr::LOCALHOST, 7142);
+    *lightyear_server_configs = get_hostserver_config(Ipv4Addr::UNSPECIFIED, 7142);
     *lightyear_client_configs = get_local_client_config(0);
 
     for button_box_entity in &button_box_query {
@@ -246,8 +246,13 @@ fn setup_client_buttons(
     commands.disconnect_client();
     commands.stop_server();
 
-    *lightyear_client_configs =
-        get_netcode_client_config(Ipv4Addr::LOCALHOST, 7142, 1, Ipv4Addr::UNSPECIFIED, 0);
+    *lightyear_client_configs = get_netcode_client_config(
+        Ipv4Addr::new(192, 168, 0, 12),
+        7142,
+        1,
+        Ipv4Addr::UNSPECIFIED,
+        0,
+    );
 
     for button_box_entity in &button_box_query {
         commands

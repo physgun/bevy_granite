@@ -10,7 +10,9 @@ use bevy::{
 };
 use lightyear::{
     prelude::{
-        server::{AuthorityPeer, ControlledBy, ReplicationTarget}, AppComponentExt, ChannelDirection, ClientId, Linear, NetworkTarget, Replicated, ServerComponentUpdateEvent, ServerReplicate
+        server::{AuthorityPeer, ControlledBy, ReplicationTarget},
+        AppComponentExt, ChannelDirection, ClientId, Linear, NetworkTarget, Replicated,
+        ServerComponentUpdateEvent, ServerReplicate,
     },
     shared::replication::delta::Diffable,
 };
@@ -139,6 +141,7 @@ impl AvatarPlugin {
 
 /// Marker component separating out entities that belong to the local user and are not replicated from a server.
 #[derive(Component, Serialize, Deserialize, Clone, Debug, PartialEq, Reflect)]
+#[reflect(Component)]
 struct LocalAvatar;
 
 /// Main component for the entity representation of a user. Parent of all entities the user controls.
@@ -371,7 +374,8 @@ fn observer_configures_arriving_mouse_loci(
             // Also, we add nodes that can't be serialized over the network, if not local. Local already has them.
             match client_id {
                 ClientId::Local(id) => {
-                    commands.entity(trigger.entity()).insert((ServerReplicate {
+                    commands.entity(trigger.entity()).insert((
+                        ServerReplicate {
                         controlled_by: ControlledBy {
                             target: NetworkTarget::Single(ClientId::Local(id)),
                             ..default()
@@ -386,7 +390,7 @@ fn observer_configures_arriving_mouse_loci(
                 ClientId::Netcode(id) => {
                     info!("Got a client_id, so we got this from a client, meaning we are the server. Adding ServerReplicate...");
                     commands.entity(trigger.entity()).insert((
-                        Visibility::Hidden,
+                        Visibility::Inherited,
                         Node {
                             position_type: PositionType::Absolute,
                             height: Val::Px(10.0),
@@ -412,11 +416,11 @@ fn observer_configures_arriving_mouse_loci(
                 }
             }
         } else {
-            // If None, then the server sent us this, and we are the a client.
+            // If None, then the server sent us this, and we are a client.
             // So, we just add the non-serializable components.
             info!("Got a None, so we are a client. Adding nonserializable components...");
             commands.entity(trigger.entity()).insert((
-                Visibility::Hidden,
+                Visibility::Inherited,
                 Node {
                     position_type: PositionType::Absolute,
                     height: Val::Px(10.0),
@@ -492,11 +496,11 @@ fn observer_transfers_locus_position_to_node(
 }
 
 /// Constant change detection system while I figure out why the above observer isn't seeing changes.
-fn constantly_update_node_from_locus_position (
+fn constantly_update_node_from_locus_position(
     mut update_query: Query<(&LocusPosition, &mut Node), Changed<LocusPosition>>,
 ) {
     for (locus_pos, mut locus_node) in &mut update_query {
-    locus_node.left = Val::Percent(locus_pos.pos().x * 100.0);
-    locus_node.top = Val::Percent(locus_pos.pos().y * 100.0);   
+        locus_node.left = Val::Percent(locus_pos.pos().x * 100.0);
+        locus_node.top = Val::Percent(locus_pos.pos().y * 100.0);
     }
 }
