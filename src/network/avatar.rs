@@ -302,7 +302,7 @@ impl Mul<f32> for LocusPosition {
     }
 }
 impl Linear for LocusPosition {
-    fn lerp(start: &Self, other: &Self, t: f32) -> Self {
+    fn lerp(start: &Self, _other: &Self, _t: f32) -> Self {
         *start // We'll have to figure this out later.
     }
 }

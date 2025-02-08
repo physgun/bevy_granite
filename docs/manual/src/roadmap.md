@@ -20,13 +20,13 @@
 - [x] hostserver sees client's mouse pos
 
 ### [ ] Atomic Operations
-- [ ] Settle on a name
+- [x] Settle on a name: Kit for tooling and Catena/Catenae for the titular atomic operations.
 - [ ] Iterate toward a first draft API for creating and using these.
 - [ ] Design compatibility between network and nonnetwork features.
 
 ### [ ] Basic UI Spaces
-- [ ] Design a Territory with new relations
-- [ ] Resizable Territories, using atomic operations.
+- [ ] Design a Territory with the new relations
+- [ ] Resizable Territories, using catenae.
 
 ### [ ] Settings SSoTs
 

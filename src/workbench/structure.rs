@@ -14,6 +14,9 @@ impl Plugin for StructurePlugin {
             app.register_component::<OrdonnanceStratum>(ChannelDirection::ServerToClient);
         };
 
+        app.register_type::<X>()
+            .register_type::<Y>();
+
         app.add_event::<LocalLociStratumSpawned>()
             .add_event::<LocalOrdonnanceStratumSpawned>()
             .add_observer(Self::observer_configures_new_local_loci_stratum)
@@ -146,3 +149,80 @@ pub struct OrdonnanceStratum;
 /// This is so observers can configure just the local one, and ignore replicated ones.
 #[derive(Event, Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Reflect)]
 pub(crate) struct LocalOrdonnanceStratumSpawned;
+
+/// Marker trait for [`North`], [`East`], [`South`], and [`West`].
+pub(crate) trait Cardinal {}
+
+/// Marker component for the [`North`] side of something.
+#[derive(Component, Serialize, Deserialize, Clone, Debug, PartialEq, Reflect)]
+#[reflect(Component, Serialize, Deserialize)]
+pub(crate) struct North;
+impl Cardinal for North {}
+
+/// Marker component for the [`East`] side of something.
+#[derive(Component, Serialize, Deserialize, Clone, Debug, PartialEq, Reflect)]
+#[reflect(Component, Serialize, Deserialize)]
+pub(crate) struct East;
+impl Cardinal for East {}
+
+/// Marker component for the [`South`] side of something.
+#[derive(Component, Serialize, Deserialize, Clone, Debug, PartialEq, Reflect)]
+#[reflect(Component, Serialize, Deserialize)]
+pub(crate) struct South;
+impl Cardinal for South {}
+
+/// Marker component for the [`West`] side of something.
+#[derive(Component, Serialize, Deserialize, Clone, Debug, PartialEq, Reflect)]
+#[reflect(Component, Serialize, Deserialize)]
+pub(crate) struct West;
+impl Cardinal for West {}
+
+/// Coordinate type representing the `Workbench` screenspace percentage [`f32`] `x` coordinate. `X(100.0)` means `100%` of parent width, east side. 
+/// 
+/// This library contains plenty of single-coordinate entities in [`X`] interacting with single-coordinate entities in [`Y`],
+/// and there are plenty of subtle bugs that can be introduced by accidentally passing one for the other.
+/// Having an explicit newtype like this also makes the clusters of math much more readable in design intent.
+#[derive(Component, Serialize, Deserialize, Clone, Debug, PartialEq, Reflect)]
+#[reflect(Component, Serialize, Deserialize)]
+pub(crate) struct X(f32);
+impl X{
+    /// Gets the inner [`f32`] without the ugly `.0` syntax.
+    fn get(&self) -> f32 {
+        self.0
+    }
+}
+impl From<f32> for X{
+    fn from(value: f32) -> Self {
+        X(value)
+    }
+}
+impl From<Y> for X{
+    fn from(value: Y) -> Self {
+        X(value.get())
+    }
+}
+
+/// Coordinate type representing the `Workbench` screenspace percentage [`f32`] `y` coordinate. `Y(100.0)` means `100%` of parent height, south side. 
+/// 
+/// This library contains plenty of single-coordinate entities in [`Y`] interacting with single-coordinate entities in [`X`],
+/// and there are plenty of subtle bugs that can be introduced by accidentally passing one for the other.
+/// Having an explicit newtype like this also makes the clusters of math much more readable in design intent.
+#[derive(Component, Serialize, Deserialize, Clone, Debug, PartialEq, Reflect)]
+#[reflect(Component, Serialize, Deserialize)]
+pub(crate) struct Y(f32);
+impl Y{
+    /// Gets the inner [`f32`] without the ugly `.0` syntax.
+    fn get(&self) -> f32 {
+        self.0
+    }
+}
+impl From<f32> for Y{
+    fn from(value: f32) -> Self {
+        Y(value)
+    }
+}
+impl From<X> for Y{
+    fn from(value: X) -> Self {
+        Y(value.get())
+    }
+}
