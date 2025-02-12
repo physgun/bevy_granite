@@ -47,7 +47,8 @@ pub mod prelude {
 
     #[doc(hidden)]
     pub use crate::{
-        workbench::structure::{GraniteRoot, OrdonnanceStratum},
+        workbench::structure::{GraniteRoot, OrdonnanceStratum, LociStratum, LocalOrdonnanceStratumSpawned, LocalLociStratumSpawned},
+        workbench::territory::{Territory, SpawnTerritory, TerritorySpawned},
         GranitePlugin,
     };
 }

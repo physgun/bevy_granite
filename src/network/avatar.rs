@@ -374,8 +374,7 @@ fn observer_configures_arriving_mouse_loci(
             // Also, we add nodes that can't be serialized over the network, if not local. Local already has them.
             match client_id {
                 ClientId::Local(id) => {
-                    commands.entity(trigger.entity()).insert((
-                        ServerReplicate {
+                    commands.entity(trigger.entity()).insert((ServerReplicate {
                         controlled_by: ControlledBy {
                             target: NetworkTarget::Single(ClientId::Local(id)),
                             ..default()

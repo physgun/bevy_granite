@@ -13,6 +13,6 @@ pub(crate) struct WorkbenchPlugin;
 impl Plugin for WorkbenchPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(StructurePlugin)
-        .add_plugins(TerritoryPlugin);
+            .add_plugins(TerritoryPlugin);
     }
 }
