@@ -178,3 +178,7 @@ impl Cardinal for South {}
 #[reflect(Component, Serialize, Deserialize)]
 pub(crate) struct West;
 impl Cardinal for West {}
+
+/// Component for locking UI elements, signaling that the user doesn't want them moving around.
+#[derive(Component, Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Reflect)]
+pub struct Locked;

@@ -67,6 +67,7 @@ impl SpawnTerritory {
     }
 
     /// Initializes a new [`SpawnTerritory`].
+    #[must_use = "You called for a new SpawnTerritory, but never used it!"]
     pub fn new(rect: Rect) -> SpawnTerritory {
         SpawnTerritory { rect }
     }
@@ -91,8 +92,6 @@ pub(crate) struct Border<D: Cardinal> {
     start_point: f32,
     /// The larger, ending coordinate of the border.
     end_point: f32,
-    /// Midpoint of the border.
-    midpoint: f32,
     /// The smallest size the border can be.
     minimum_size: f32,
 }
@@ -102,7 +101,6 @@ impl Border<North> {
         let pos = rect.min.y;
         let start_point = rect.min.x;
         let end_point = rect.max.x;
-        let midpoint = end_point - start_point;
         let minimum_size = 25.0;
 
         Border::<North> {
@@ -110,7 +108,6 @@ impl Border<North> {
             pos,
             start_point,
             end_point,
-            midpoint,
             minimum_size,
         }
     }
@@ -121,7 +118,6 @@ impl Border<East> {
         let pos = rect.max.x;
         let start_point = rect.min.y;
         let end_point = rect.max.y;
-        let midpoint = end_point - start_point;
         let minimum_size = 25.0;
 
         Border::<East> {
@@ -129,7 +125,6 @@ impl Border<East> {
             pos,
             start_point,
             end_point,
-            midpoint,
             minimum_size,
         }
     }
@@ -140,7 +135,6 @@ impl Border<South> {
         let pos = rect.max.y;
         let start_point = rect.min.x;
         let end_point = rect.max.x;
-        let midpoint = end_point - start_point;
         let minimum_size = 25.0;
 
         Border::<South> {
@@ -148,7 +142,6 @@ impl Border<South> {
             pos,
             start_point,
             end_point,
-            midpoint,
             minimum_size,
         }
     }
@@ -159,7 +152,6 @@ impl Border<West> {
         let pos = rect.min.x;
         let start_point = rect.min.y;
         let end_point = rect.max.y;
-        let midpoint = end_point - start_point;
         let minimum_size = 25.0;
 
         Border::<West> {
@@ -167,7 +159,6 @@ impl Border<West> {
             pos,
             start_point,
             end_point,
-            midpoint,
             minimum_size,
         }
     }

@@ -24,8 +24,10 @@ use network::NetworkPlugin;
 mod network;
 
 use workbench::WorkbenchPlugin;
-
 mod workbench;
+
+use mechanism::MechanismPlugin;
+mod mechanism;
 
 /// Re-export of all of Granite's common tools.
 #[expect(
@@ -47,7 +49,7 @@ pub mod prelude {
 
     #[doc(hidden)]
     pub use crate::{
-        workbench::structure::{GraniteRoot, OrdonnanceStratum, LociStratum, LocalOrdonnanceStratumSpawned, LocalLociStratumSpawned},
+        workbench::structure::{GraniteRoot, OrdonnanceStratum, LociStratum, LocalOrdonnanceStratumSpawned, LocalLociStratumSpawned, Locked},
         workbench::territory::{Territory, SpawnTerritory, TerritorySpawned},
         GranitePlugin,
     };
@@ -65,6 +67,7 @@ impl Plugin for GranitePlugin {
             focused_mode: UpdateMode::Continuous,
             unfocused_mode: UpdateMode::Continuous,
         })
+        .add_plugins(MechanismPlugin)
         .add_plugins(WorkbenchPlugin);
     }
 }
